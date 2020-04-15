@@ -1,82 +1,113 @@
 // PACKAGE IMPORTS //
-import React, {Fragment, useState} from "react";
-import {Link} from "react-router-dom";
+import React, {cloneElement, Fragment, useEffect, useState} from "react";
+import {useHistory, useLocation} from "react-router-dom";
 // MATERIAL UI COMPONENTS //
 import AppBar from "@material-ui/core/AppBar";
 import useScrollTrigger from "@material-ui/core/useScrollTrigger";
 import {makeStyles} from "@material-ui/styles";
 import Toolbar from "@material-ui/core/Toolbar";
-import Tabs from "@material-ui/core/Tabs";
-import Tab from "@material-ui/core/Tab";
 import Button from "@material-ui/core/Button";
 // PROJECT COMPONENTS //
 import logo from "../../assets/logo.svg";
+import {headerStyles} from "./components/headerStyles";
+import HeaderTabs from "./components/HeaderTabs";
+import HeaderMenu from "./components/headerMenu";
 
-const ALL_TABS = [
+const TAB_CONTENT = [
   {route: "/", label: "Home"},
-  {route: "/services", label: "Services"},
+  {
+    route: "/services", label: "Services", menuItems:
+      [
+        {label: "Custom Software Development"},
+        {label: "Mobile Development"},
+        {label: "Website Development"}
+      ]
+  },
   {route: "/revolution", label: "The Revolution"},
   {route: "/about", label: "About Us"},
-  {route: "/contact", label: "Contact Us"},
+  {route: "/contact", label: "Contact Us"}
 ];
 
-
-const ElevationScroll = (props) => {
-  const {children} = props;
-
-  const trigger = useScrollTrigger({
-    disableHysteresis: true,
-    threshold: 0
-  });
-
-  return React.cloneElement(children, {
-    elevation: trigger ? 4 : 0,
-  });
+const ElevationScroll = ({children}) => {
+  const trigger = useScrollTrigger({disableHysteresis: true, threshold: 0});
+  return cloneElement(children, {elevation: trigger ? 4 : 0});
 };
 
-const useStyles = makeStyles(theme => ({
-  toolbarMargin: {...theme.mixins.toolbar, marginBottom: "3em"},
-  logo: {height: "7em"},
-  tabContainer: {marginLeft: "auto"},
-  tab: {...theme.typography.tab, minWidth: 10, marginLeft: "25px"},
-  button: {
-    ...theme.typography.estimate,
-    borderRadius: "50px",
-    marginLeft: "50px",
-    marginRight: "25px",
-    height: "45px"
-  }
-}));
+const useStyles = makeStyles(theme => (headerStyles(theme)));
 
 const Header = () => {
   const classes = useStyles();
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useState("/");
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
+  const history = useHistory();
 
-  const handleChangeTab = (e, value) => {
+  const handleClickButton = (e, value) => {
+    e.preventDefault();
     setTabValue(value);
+    history.push(value);
   };
+
+  const handleMenuClick = (e) => {
+    setAnchorEl(e.currentTarget);
+    setMenuOpen(true);
+  }
+
+  const handleMenuClose = (e) => {
+    console.log("close menu");
+    setAnchorEl(null);
+    setMenuOpen(false);
+  }
+
+  useEffect(() => {
+    setTabValue(location.pathname);
+  }, [location]);
+
+  const renderHeaderMenu = () => {
+    return TAB_CONTENT.map((tab, i) => {
+      if (tab.menuItems) {
+        return (
+          <HeaderMenu
+            key={`${i}-${tab.label}`}
+            anchorEl={anchorEl}
+            menuOpen={menuOpen}
+            handleMenuClose={handleMenuClose}
+            menuItems={tab.menuItems}
+          />
+        );
+      }
+      return null;
+    });
+  }
+
 
   return (
     <Fragment>
       <ElevationScroll>
         <AppBar>
           <Toolbar disableGutters>
-            <img src={logo} className={classes.logo} alt={"company logo"}/>
-            <Tabs
-              className={classes.tabContainer}
-              value={tabValue}
-              onChange={handleChangeTab}
-              indicatorColor={"primary"}
+            <Button
+              className={classes.logoContainer}
+              onClick={(e) => handleClickButton(e, "/")}
+              disableRipple
             >
-              {ALL_TABS.map((tab, i) => (
-                <Tab key={i} className={classes.tab} component={Link} to={`${tab.route}`} label={`${tab.label}`}/>
-              ))};
-            </Tabs>
-            <Button variant={"contained"} color={"secondary"} className={classes.button}>Free Estimate</Button>
+              <img src={logo} className={classes.logo} alt={"company logo"}/>
+            </Button>
+            <HeaderTabs
+              tabValue={tabValue}
+              setTabValue={setTabValue}
+              handleMenuClick={handleMenuClick}
+              TAB_CONTENT={TAB_CONTENT}
+            />
+            <Button variant={"contained"} color={"secondary"} className={classes.button}>
+              Free Estimate
+            </Button>
           </Toolbar>
         </AppBar>
       </ElevationScroll>
       <div className={classes.toolbarMargin}/>
+      {renderHeaderMenu()}
     </Fragment>
   );
 }
