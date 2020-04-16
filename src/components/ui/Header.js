@@ -18,9 +18,10 @@ const TAB_CONTENT = [
   {
     route: "/services", label: "Services", menuItems:
       [
-        {label: "Custom Software Development"},
-        {label: "Mobile Development"},
-        {label: "Website Development"}
+        {route: "/services", label: "Services"},
+        {route: "/custom-software", label: "Custom Software Development"},
+        {route: "/mobile-apps", label: "Mobile App Development"},
+        {route: "/websites", label: "Website Development"}
       ]
   },
   {route: "/revolution", label: "The Revolution"},
@@ -55,13 +56,16 @@ const Header = () => {
   }
 
   const handleMenuClose = (e) => {
-    console.log("close menu");
     setAnchorEl(null);
     setMenuOpen(false);
   }
 
   useEffect(() => {
-    setTabValue(location.pathname);
+    let path = location.pathname;
+    TAB_CONTENT.forEach(tab => {
+      if (tab.route && tab.route === path) setTabValue(path);
+      if (tab.menuItems && tab.menuItems.some(item => item.route === path)) setTabValue(tab.route);
+    });
   }, [location]);
 
   const renderHeaderMenu = () => {
@@ -74,6 +78,7 @@ const Header = () => {
             menuOpen={menuOpen}
             handleMenuClose={handleMenuClose}
             menuItems={tab.menuItems}
+            menuRoute={tab.route}
           />
         );
       }
